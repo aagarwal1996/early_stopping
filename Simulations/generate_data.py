@@ -28,13 +28,16 @@ def spike_model(X,s,beta,sigma):
     numpy array of shape (n)        
     '''
     
-   def create_y(x,s,beta):
+    def create_y(x,s,beta):
         spike_term = 0
+        spike_satisfied = True
         for i in range(s):
-            if(x[i] == 1):
-              spike_term += x[i]*beta
-            else:
-              break
+            if(x[i] == 0):
+                spike_satisfied = False
+        if (spike_satisfied):
+            spike_term = beta
+        else:
+            spike_term = 0
         return spike_term
     y_train = np.array([create_y(X[i, :],s,beta) for i in range(len(X))])
     y_train = y_train + sigma * np.random.randn((len(X)))
@@ -54,10 +57,15 @@ def pyramid_model(X,s,beta,sigma):
     '''
     
     def create_y(x,s,beta):
-        linear_term = 0
+        if(len(beta)!=s):
+            beta = [beta[0]]*s
+        pyramid_term = 0
         for i in range(s):
-            linear_term += x[i]*x[i]*beta
-        return linear_term
+            if(x[i] == 1):
+                pyramid_term += x[i]*beta
+            else:
+                break
+        return pyramid_term
     y_train = np.array([create_y(X[i, :],s,beta) for i in range(len(X))])
     y_train = y_train + sigma * np.random.randn((len(X)))
     return y_train
