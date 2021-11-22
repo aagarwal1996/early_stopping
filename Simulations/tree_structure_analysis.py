@@ -1,5 +1,6 @@
 import sys
 import math
+import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_squared_error
@@ -75,6 +76,7 @@ def convert_tree_paths(tree,tree_paths):
 
 def get_tree_paths(CART):
     CART_structure = convert_tree_paths(CART,all_tree_paths(CART))
+    #CART_structure = all_tree_paths(CART)
     return  set([tuple(y) for y in CART_structure])
 
 def get_model_structure(s):
@@ -86,4 +88,19 @@ def get_model_structure(s):
         path.append(-1)
         correct_structure.append(path)
     correct_structure.append(path) #need to double count last path 
-    return correct_structure
+    model_structure= set([tuple(y) for y in correct_structure])
+    return model_structure
+
+def check_tree_structure(CART,s):
+    model_structure = get_model_structure(s)
+    CART_structure = get_tree_paths(CART)
+    exact_recovery_indicator = 0.0
+    print("CART Structure:" + str(CART_structure))
+    print("model_structure:" + str(model_structure))
+    
+    if CART_structure == model_structure:
+        exact_recovery_indicator = 1.0
+    else:
+        exact_recovery_indicator = 0.0
+    return exact_recovery_indicator
+

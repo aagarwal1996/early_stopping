@@ -35,12 +35,12 @@ colors = prop_cycle.by_key()['color']
 
 # choose params
 #n_train = [100, 250, 500, 750, 1000, 1500] #,1500,2000,2500]
-n_train = [100,200]
+n_train = [100,250,500,750,1000,1500]
 n_test = 500
 d = 100
 beta = 1
 sigma = 0.1
-sparsity = [2,4,6,8,10]
+sparsity = [3]
 n_avg = 5
 seed = 1
 folds = 5
@@ -48,8 +48,8 @@ folds = 5
 # keys end up being saps, cart, rf
 scores = defaultdict(list)
 error_bar = defaultdict(list)
-num_training_samples_list = defaultdict(list)
-sparsity_list = defaultdict(list)
+recovery_prob = defaultdict(list)
+recovery_prob_error_bars = defaultdict(list)
 np.random.seed(seed)
 
 # This cell's code is used to fit and predict for on linear model varying across
@@ -58,6 +58,8 @@ for s_num, s in enumerate(sparsity):
     print('s_num', s_num)
     scores_s = defaultdict(list)
     error_bar_s = defaultdict(list)
+    recovery_prob_s = defaultdict(list)
+    recovery_prob_error_bars_s = defaultdict(list)
     fname = oj(out_dir, f'scores_{s}.pkl')
 
     if os.path.exists(fname):
@@ -65,6 +67,7 @@ for s_num, s in enumerate(sparsity):
     
     for n in tqdm(n_train):
         scores_s_n = defaultdict(list)
+        recovery_prob_s_n = defaultdict(list)
         for j in range(n_avg):
             X_train = sample_boolean_X(n,d)
             X_test = sample_boolean_X(n_test, d)
@@ -84,22 +87,28 @@ for s_num, s in enumerate(sparsity):
                 #preds = m.predict(X_test)
                 #scores_s_n[k].append(mean_squared_error(y_test, preds))
             models = ['CART','CART_CCP','CART_early_stopping','KNN']
-            model_errors = train_all_models(X_train,y_train,X_train,y_train,X_test,y_test,sigma,folds = 5)
+            model_recovery_models = ['CART_CCP','CART_early_stopping']
+            model_errors,model_recovery_probabilities = train_all_models(X_train,y_train,X_train,y_train,X_test,y_test,sigma,s,folds = 5)
             for k,m in zip(models,model_errors):   
                 scores_s_n[k].append(m)
-
-            #scores_s_n.append()
-            
-
+            for k,m in zip(model_recovery_models,model_recovery_probabilities):
+                recovery_prob_s_n[k].append(m)
         for k in scores_s_n:
             scores_s[k].append(np.mean(scores_s_n[k]))
             error_bar_s[k].append(np.std(scores_s_n[k]))
+        for k in recovery_prob_s_n:
+            recovery_prob_s[k].append(np.mean(recovery_prob_s_n[k]))
+            recovery_prob_error_bars_s[k].append(np.std(recovery_prob_s_n[k]))
+            
     
     #save results
     for k in scores_s:
         scores[k].append(scores_s[k])
         error_bar[k].append(error_bar_s[k])
-        
+    for k in recovery_prob_s:
+        recovery_prob[k].append(recovery_prob_s[k])
+        recovery_prob_error_bars[k].append(recovery_prob_error_bars_s[k])
+    
     os.makedirs(out_dir, exist_ok=True)
     with open(fname, 'wb') as f:
-        pkl.dump((scores, error_bar,num_training_samples_list,sparsity_list), f)
+        pkl.dump((scores, error_bar,recovery_prob,recovery_prob_error_bars), f)
